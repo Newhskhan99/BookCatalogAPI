@@ -16,6 +16,7 @@ namespace BookCatalogAPI.Repositories
     public class BookRepository : IBookRepository
     {
         private readonly HttpClient _httpClient;
+        private readonly string _externalUri = "https://digitalcodingtest.bupa.com.au/api/v1/bookowners";
 
         public BookRepository(HttpClient httpClient)
         {
@@ -24,10 +25,14 @@ namespace BookCatalogAPI.Repositories
 
         public async Task<IEnumerable<Book>> GetBooksAsync()
         {
-            var response = await _httpClient.GetAsync("(https://localhost:7129/swagger"); // This URI for local machine
+            try
+            {var externalUri = "https://digitalcodingtest.bupa.com.au/api/v1/bookowners";// External Api URI
+            var response = await _httpClient.GetAsync(externalUri); 
             response.EnsureSuccessStatusCode();
             var books = await response.Content.ReadFromJsonAsync<IEnumerable<Book>>();
-            return books;
+                return books;
+            }
+            catch (HttpRequestException ex) { Console.WriteLine("Error:{ex.Message}"); return Enumerable.Empty<Book>(); }
         }
     }
 }

@@ -5,6 +5,8 @@ using BookCatalogAPI.Repositories;
 using BookCatalogAPI.Models;
 using System.Net.Http;
 using Moq.Protected;
+using System.Linq;
+using System.Net;
 
 namespace BookCatalogAPI.Tests
 {
@@ -14,12 +16,14 @@ namespace BookCatalogAPI.Tests
         public async Task GetBooksAsync_ReturnsBooksFromApi()
         {
             // Arrange
-            var handlerMock = new Mock<HttpMessageHandler>();
-            var response = new HttpResponseMessage(System.Net.HttpStatusCode.OK)
+            var httpMessageHandlerMock = new Mock<HttpMessageHandler>(MockBehavior.Strict);
+            var response = new HttpResponseMessage(HttpStatusCode.OK)
             {
                 Content = new StringContent("[{\"Name\":\"Book1\",\"Type\":\"Hardcover\",\"Owner\":{\"Name\":\"Owner1\",\"Age\":25}}]")
             };
-            handlerMock
+
+            // HttpMessageHandler to return the response
+            httpMessageHandlerMock
                 .Protected()
                 .Setup<Task<HttpResponseMessage>>(
                     "SendAsync",
@@ -28,10 +32,8 @@ namespace BookCatalogAPI.Tests
                 )
                 .ReturnsAsync(response);
 
-            var httpClient = new HttpClient(handlerMock.Object)
-            {
-                BaseAddress = new Uri("https://localhost:7129/swagger") // This URI for local machine
-            };
+            // Creating HttpClient with the mocked HttpMessageHandler
+            var httpClient = new HttpClient(httpMessageHandlerMock.Object);
             var repository = new BookRepository(httpClient);
 
             // Act
@@ -44,5 +46,7 @@ namespace BookCatalogAPI.Tests
             Assert.Equal("Owner1", books.First().Owner.Name);
             Assert.Equal(25, books.First().Owner.Age);
         }
+
+        
     }
 }
